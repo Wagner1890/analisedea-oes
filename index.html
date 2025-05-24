@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Análise de Ações e Simulação</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-dark text-light">
+<div class="container py-5">
+    <h1 class="mb-4 text-center">📈 Análise de Ações + Simulação de Investimento</h1>
+
+    <!-- Formulário -->
+    <form method="post" class="row g-3 mb-5">
+        <div class="col-md-4">
+            <label for="codigo" class="form-label">Código da Ação</label>
+            <input type="text" class="form-control" id="codigo" name="codigo" placeholder="Ex: PETR4.SA" required>
+        </div>
+        <div class="col-md-4">
+            <label for="aporte" class="form-label">Aporte Mensal (R$)</label>
+            <input type="number" class="form-control" id="aporte" name="aporte" step="0.01" required>
+        </div>
+        <div class="col-md-4">
+            <label for="anos" class="form-label">Período (anos)</label>
+            <input type="number" class="form-control" id="anos" name="anos" required>
+        </div>
+        <div class="col-12 text-center">
+            <button type="submit" class="btn btn-success px-5 mt-3">📊 Analisar</button>
+        </div>
+    </form>
+
+    <!-- Resultados -->
+    {% if resultado %}
+
+
+    <div class="card text-bg-dark mb-4">
+        <div class="card-body">
+            <h3 class="card-title">{{ resultado.nome }}</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Preço Atual:</strong> {{ resultado.preco or 'N/A' }}</p>
+                    <p><strong>P/L:</strong> 
+                        <span class="{% if resultado.pl_float < 10 %}text-success{% elif resultado.pl_float < 20 %}text-warning{% else %}text-danger{% endif %}" 
+                              title="Preço/Lucro: quanto menor, melhor (ideal < 15)">
+                            {{ resultado.pl or 'N/A' }} 
+                            {% if resultado.pl_float < 10 %}✔️{% elif resultado.pl_float < 20 %}⚠️{% else %}❌{% endif %}
+                        </span>
+                    </p>
+                    <p><strong>Dividend Yield:</strong> 
+                        <span class="{% if resultado.dy_float >= 0.05 %}text-success{% elif resultado.dy_float >= 0.02 %}text-warning{% else %}text-danger{% endif %}" 
+                              title="Retorno em dividendos. Bom se for maior que 5%">
+                            {{ resultado.dy or 'N/A' }} 
+                            {% if resultado.dy_float >= 0.05 %}✔️{% elif resultado.dy_float >= 0.02 %}⚠️{% else %}❌{% endif %}
+                        </span>
+                    </p>
+                    <p><strong>Score:</strong> 
+                        <span class="{% if resultado.score_float >= 70 %}text-success{% elif resultado.score_float >= 40 %}text-warning{% else %}text-danger{% endif %}" 
+                              title="Pontuação geral da ação com base nos indicadores">
+                            {{ resultado.score or 'N/A' }} 
+                            {% if resultado.score_float >= 70 %}✔️{% elif resultado.score_float >= 40 %}⚠️{% else %}❌{% endif %}
+                        </span>
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>ROE:</strong> 
+                        <span class="{% if resultado.roe != 'N/A' and resultado.roe | replace('%', '') | float >= 15 %}text-success{% elif resultado.roe != 'N/A' and resultado.roe | replace('%', '') | float >= 5 %}text-warning{% else %}text-danger{% endif %}" 
+                              title="Retorno sobre patrimônio. Ideal acima de 15%">
+                            {{ resultado.roe or 'N/A' }} 
+                            {% if resultado.roe != 'N/A' and resultado.roe | replace('%', '') | float >= 15 %}✔️{% elif resultado.roe != 'N/A' and resultado.roe | replace('%', '') | float >= 5 %}⚠️{% else %}❌{% endif %}
+                        </span>
+                    </p>
+                    <p><strong>Margem Líquida:</strong> 
+                        <span class="{% if resultado.margem != 'N/A' and resultado.margem | replace('%', '') | float >= 10 %}text-success{% elif resultado.margem != 'N/A' and resultado.margem | replace('%', '') | float >= 5 %}text-warning{% else %}text-danger{% endif %}" 
+                              title="Lucro líquido sobre a receita. Ideal acima de 10%">
+                            {{ resultado.margem or 'N/A' }} 
+                            {% if resultado.margem != 'N/A' and resultado.margem | replace('%', '') | float >= 10 %}✔️{% elif resultado.margem != 'N/A' and resultado.margem | replace('%', '') | float >= 5 %}⚠️{% else %}❌{% endif %}
+                        </span>
+                    </p>
+                    <p><strong>Dívida/Patrimônio:</strong> 
+                        <span class="{% if resultado.divida != 'N/A' and resultado.divida | float <= 100 %}text-success{% elif resultado.divida != 'N/A' and resultado.divida | float <= 150 %}text-warning{% else %}text-danger{% endif %}" 
+                              title="Indicador de endividamento. Bom se menor que 100">
+                            
+                            {{ resultado.divida or 'N/A' }} 
+                            {% if resultado.divida != 'N/A' and resultado.divida | float <= 100 %}✔️{% elif resultado.divida != 'N/A' and resultado.divida | float <= 150 %}⚠️{% else %}❌{% endif %}
+                                <p><strong>P/VP:</strong> 
+                                    <span class="{% if resultado.pvp != 'N/A' and resultado.pvp_float <= 1.5 %}text-success{% elif resultado.pvp != 'N/A' and resultado.pvp_float <= 3 %}text-warning{% else %}text-danger{% endif %}" 
+                                          title="Preço sobre Valor Patrimonial. Ideal abaixo de 1.5 para empresas consolidadas">
+                                        {{ resultado.pvp or 'N/A' }} 
+                                        {% if resultado.pvp != 'N/A' and resultado.pvp_float <= 1.5 %}✔️{% elif resultado.pvp != 'N/A' and resultado.pvp_float <= 3 %}⚠️{% else %}❌{% endif %}
+                                    </span>
+                                </p>
+
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Simulação -->
+    <div class="card text-bg-dark mb-4">
+        <div class="card-body">
+            <h4 class="card-title">Simulação de Investimento</h4>
+            <p><strong>Aporte Mensal:</strong> {{ resultado.aporte or 'N/A' }}</p>
+            <p><strong>Período:</strong> {{ resultado.anos or 'N/A' }} anos</p>
+            <p><strong>Rentabilidade Anual:</strong> {{ resultado.rentabilidade or 'N/A' }}</p>
+            <p><strong>Valor Futuro Estimado:</strong> {{ resultado.valor_final or 'N/A' }}</p>
+
+            <canvas id="grafico" height="100"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('grafico').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ resultado.meses | tojson }},
+                datasets: [{
+                    label: 'Valor acumulado (R$)',
+                    data: {{ resultado.valores | tojson }},
+                    borderColor: 'rgba(0, 255, 132, 1)',
+                    backgroundColor: 'rgba(0, 255, 132, 0.2)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { labels: { color: '#fff' } },
+                    title: {
+                        display: true,
+                        text: 'Simulação de Investimento',
+                        color: '#fff'
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#fff' } },
+                    y: { ticks: { color: '#fff' } }
+                }
+            }
+        });
+    </script>
+    {% endif %}
+</div>
+</body>
+</html>
+                                <footer style="text-align: center; padding: 20px; font-size: 0.9em; color: #666;">
+                                  © 2025 Wagner Gomes. Todos os direitos reservados. Registro de Direitos Autorais nº DA-2025-081391.
+                                </footer>
+
